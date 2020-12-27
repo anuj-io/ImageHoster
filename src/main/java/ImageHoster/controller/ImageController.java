@@ -1,8 +1,10 @@
 package ImageHoster.controller;
 
+import ImageHoster.model.Comment;
 import ImageHoster.model.Image;
 import ImageHoster.model.Tag;
 import ImageHoster.model.User;
+import ImageHoster.service.CommentService;
 import ImageHoster.service.ImageService;
 import ImageHoster.service.TagService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +29,9 @@ public class ImageController {
     @Autowired
     private TagService tagService;
 
+    @Autowired
+    private CommentService commentService;
+
     //This method displays all the images in the user home page after successful login
     @RequestMapping("images")
     public String getUserImages(Model model) {
@@ -40,14 +45,17 @@ public class ImageController {
     //First receive the dynamic parameter in the incoming request URL in a string variable 'title' and also the Model type object
     //Call the getImageByTitle() method in the business logic to fetch all the details of that image
     //Add the image in the Model type object with 'image' as the key
+    //Injects the comments into method
     //Return 'images/image.html' file
 
     //Also now you need to add the tags of an image in the Model type object
     //Here a list of tags is added in the Model type object
     //this list is then sent to 'images/image.html' file and the tags are displayed
     @RequestMapping("/images/{id}/{title}")
-    public String showImage(@PathVariable("id") int title, Model model) {
-        Image image = imageService.getImage(title);
+    public String showImage(@PathVariable("id") int id, Model model) {
+        Image image = imageService.getImage(id);
+        List<Comment> comments = commentService.getAllComments(id);
+        image.setComments(comments);
         model.addAttribute("image", image);
         model.addAttribute("tags", image.getTags());
         return "images/image";
@@ -87,6 +95,7 @@ public class ImageController {
 
     //This controller method is called when the request pattern is of type 'editImage'
     //This method fetches the image with the corresponding id from the database and adds it to the model with the key as 'image'
+    //This method also lazy loads the comments
     //The method then returns 'images/edit.html' file wherein you fill all the updated details of the image
 
     //The method first needs to convert the list of all the tags to a string containing all the tags separated by a comma and then add this string in a Model type object
@@ -102,6 +111,8 @@ public class ImageController {
             model.addAttribute("tags", tags);
             return "images/edit";
         }
+        List<Comment> comments = commentService.getAllComments(imageId);
+        image.setComments(comments);
         model.addAttribute("tags", image.getTags());
         String error = "Only the owner of the image can edit the image";
         model.addAttribute("editError", error);
@@ -155,6 +166,8 @@ public class ImageController {
             imageService.deleteImage(imageId);
             return "redirect:/images";
         }
+        List<Comment> comments = commentService.getAllComments(imageId);
+        image.setComments(comments);
         model.addAttribute("image", image);
         model.addAttribute("tags", image.getTags());
         String error = "Only the owner of the image can delete the image";
