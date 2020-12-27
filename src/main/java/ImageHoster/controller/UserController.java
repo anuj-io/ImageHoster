@@ -40,9 +40,19 @@ public class UserController {
     //This controller method is called when the request pattern is of type 'users/registration' and also the incoming request is of POST type
     //This method calls the business logic and after the user record is persisted in the database, directs to login page
     @RequestMapping(value = "users/registration", method = RequestMethod.POST)
-    public String registerUser(User user) {
-        userService.registerUser(user);
-        return "redirect:/users/login";
+    public String registerUser(User user, Model model) {
+        String password = user.getPassword();
+        if(isValidPassword(password)) {
+            userService.registerUser(user);
+            return "redirect:/users/login";
+        }
+        String error = "Password must contain atleast 1 alphabet, 1 number & 1 special character";
+        User newUser = new User();
+        UserProfile profile = new UserProfile();
+        newUser.setProfile(profile);
+        model.addAttribute("User", newUser);
+        model.addAttribute("passwordTypeError", error);
+        return "users/registration";
     }
 
     //This controller method is called when the request pattern is of type 'users/login'
@@ -78,5 +88,12 @@ public class UserController {
         List<Image> images = imageService.getAllImages();
         model.addAttribute("images", images);
         return "index";
+    }
+
+    private boolean isValidPassword(String password) {
+        String numRegex   = ".*[0-9].*";
+        String alphaRegex = ".*[A-Za-z].*";
+        String specialCharRegex = ".*[^A-Za-z0-9].*";
+        return password.matches(numRegex) && password.matches(alphaRegex) && password.matches(specialCharRegex);
     }
 }
